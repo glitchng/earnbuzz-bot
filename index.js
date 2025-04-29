@@ -1,35 +1,59 @@
 const TelegramBot = require('node-telegram-bot-api');
 
 // === CONFIGURATION ===
-const BOT_TOKEN = process.env.BOT_TOKEN;  // Use environment variable for token
-const CHANNEL_ID = '-1002353520070';     // Your Telegram channel ID
-const ADMIN_ID = 6101660516;             // Your Telegram ID
+const BOT_TOKEN = process.env.BOT_TOKEN;  // Use the environment variable for the bot token
+const CHANNEL_ID = '-1002353520070';     // Replace with your channel ID
+const ADMIN_ID = 6101660516;             // Replace with your own Telegram ID
 
 const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 
 let broadcasting = false;
 let broadcastInterval = null;
 let messageCount = 0;
-let lastBigAmountTime = Date.now() - 300000; // Allows first big one immediately
 
 // === Utility Functions ===
-function getRandomNigerianName() {
-  const firstNames = [ "Chinedu", "Aisha", "Tunde", "Ngozi", "Emeka", "Fatima", "Ibrahim", "Kelechi",
-    "Seyi", "Adaobi", "Bola", "Obinna", "Zainab", "Yusuf", "Amaka", "David", "Grace", "Uche",
-    "Tope", "Nneka", "Samuel", "Maryam", "Gbenga", "Rashida", "Kingsley", "Temitope", "Hadiza",
-    "John", "Blessing", "Peter", "Linda", "Ahmed", "Funmi", "Rita", "Abdul", "Chika", "Paul",
-    "Victoria", "Halima", "Ifeanyi", "Sarah", "Joseph", "Joy", "Musa", "Bukky", "Stephen",
-    "Aminat", "Henry", "Femi" ];
+function getRandomAmount() {
+  const rand = Math.random();
 
-  const lastNames = [ "Okoro", "Bello", "Oladipo", "Nwankwo", "Eze", "Musa", "Lawal", "Umeh", "Bakare",
-    "Okafor", "Adeyemi", "Mohammed", "Onyeka", "Ibrahim", "Ogunleye", "Balogun", "Chukwu", "Usman",
-    "Abiola", "Okonkwo", "Aliyu", "Ogundele", "Danladi", "Ogbonna", "Salami", "Olumide", "Obi",
-    "Akinwale", "Suleiman", "Ekwueme", "Ayodele", "Garba", "Nwachukwu", "Anyanwu", "Yahaya",
-    "Idowu", "Ezra", "Mustapha", "Iroko", "Ajayi", "Adebayo", "Ogundipe", "Nuhu", "Bamgbose",
-    "Ikenna", "Osagie", "Akinyemi", "Chisom" ];
+  if (rand < 0.98) {
+    // 98% chance: ₦100,000 – ₦500,000
+    return Math.floor(Math.random() * (500000 - 100000 + 1)) + 100000;
+  } else {
+    // 2% chance: ₦500,001 – ₦1,000,000
+    return Math.floor(Math.random() * (1000000 - 500001 + 1)) + 500001;
+  }
+}
+
+function getRandomNigerianName() {
+  const firstNames = [
+    "Chinedu", "Aisha", "Tunde", "Ngozi", "Emeka", "Fatima", "Ibrahim", "Kelechi",
+    "Seyi", "Adaobi", "Bola", "Obinna", "Zainab", "Yusuf", "Amaka", "David",
+    "Grace", "Uche", "Tope", "Nneka", "Samuel", "Maryam", "Gbenga", "Rashida",
+    "Kingsley", "Temitope", "Hadiza", "John", "Blessing", "Peter", "Linda", "Ahmed",
+    "Funmi", "Rita", "Abdul", "Chika", "Paul", "Victoria", "Halima", "Ifeanyi",
+    "Sarah", "Joseph", "Joy", "Musa", "Bukky", "Stephen", "Aminat", "Henry", "Femi",
+    "Micheal", "Modupe", "Ngozi", "Yemisi", "Titi", "Chijioke", "Oluwaseun", "Durojaiye",
+    "Fatimah", "Ademola", "Yusuf", "Aminat", "Ifeoluwa", "Hassan", "Aderemi", "Idris",
+    "Ekong", "Ivy", "Uko", "Eyo", "Abasiama", "Mfon", "Mbakara", "Ibrahim", "Nkechi",
+    "Idorenyin", "Martha", "Ita", "Akpan", "Essien", "Obong", "Ikot", "Inyang", "Ntia",
+    "Akpabio", "Obong", "Etim", "Inyene", "Ndiana", "Udoh", "Akanimoh", "Udo", "Ukpong"
+  ];
+
+  const lastNames = [
+    "Okoro", "Bello", "Oladipo", "Nwankwo", "Eze", "Musa", "Lawal", "Umeh", "Bakare",
+    "Okafor", "Adeyemi", "Mohammed", "Onyeka", "Ibrahim", "Ogunleye", "Balogun",
+    "Chukwu", "Usman", "Abiola", "Okonkwo", "Aliyu", "Ogundele", "Danladi", "Ogbonna",
+    "Salami", "Olumide", "Obi", "Akinwale", "Suleiman", "Ekwueme", "Ayodele", "Garba",
+    "Nwachukwu", "Anyanwu", "Yahaya", "Idowu", "Ezra", "Mustapha", "Iroko", "Ajayi",
+    "Adebayo", "Ogundipe", "Nuhu", "Bamgbose", "Ikenna", "Osagie", "Akinyemi", "Chisom",
+    "Oladele", "Adeleke", "Fashola", "Taiwo", "Tiwatope", "Oluwaseun", "Onyebuchi",
+    "Ikechukwu", "Ayodele", "Nnaji", "Ogunbiyi", "Sule", "Muhammad", "Alabi", "Oloyede",
+    "Ekong", "Idong", "Etim", "Bassey", "Otu", "Akanimoh", "Udoh", "Akpabio", "Ubong"
+  ];
 
   const first = firstNames[Math.floor(Math.random() * firstNames.length)];
   const last = lastNames[Math.floor(Math.random() * lastNames.length)];
+
   return `${first} ${last}`;
 }
 
@@ -38,7 +62,7 @@ function getRandomAccountNumber() {
 }
 
 function getRandomBank() {
-  const banks = ["Access Bank", "GTBank", "Zenith Bank", "UBA", "First Bank"];
+  const banks = ["Access Bank", "GTBank", "Zenith Bank", "UBA", "First Bank", "Union Bank", "Fidelity Bank", "Stanbic IBTC", "Wema Bank", "Ecobank"];
   return banks[Math.floor(Math.random() * banks.length)];
 }
 
@@ -54,25 +78,15 @@ function getCurrentTimestamp() {
 }
 
 function sendWithdrawalMessage() {
-  const now = Date.now();
-  let amount;
-
-  if (now - lastBigAmountTime >= 300000) {
-    // Big amount every 5 mins
-    amount = Math.floor(Math.random() * (1000000 - 500001 + 1)) + 500001;
-    lastBigAmountTime = now;
-  } else {
-    // Normal range
-    amount = Math.floor(Math.random() * (500000 - 100000 + 1)) + 100000;
-  }
-
+  const amount = getRandomAmount();
   const name = getRandomNigerianName();
   const accountNumber = getRandomAccountNumber();
   const bank = getRandomBank();
   const timestamp = getCurrentTimestamp();
 
-  const message = `✅ Withdrawal Successful\n\n💸 Amount: ₦${amount.toLocaleString()}\n👤 Name: ${name}\n💳 Account: ${accountNumber}\n🏦 Bank: ${bank}\n📆 Date: ${timestamp}`;
-  bot.sendMessage(CHANNEL_ID, message);
+  const message = `✅ *Withdrawal Successful*\n\n💸 *Amount:* ₦${amount.toLocaleString()}\n👤 *Name:* ${name}\n🏦 *Account:* \`${accountNumber}\` (${bank})\n📆 *Date:* ${timestamp}`;
+
+  bot.sendMessage(CHANNEL_ID, message, { parse_mode: "Markdown" });
 }
 
 // === Broadcast Control ===
@@ -89,7 +103,7 @@ function startBroadcasting() {
 
     sendWithdrawalMessage();
     messageCount++;
-  }, 10000); // Every 10 seconds
+  }, 10000); // 10 seconds
 }
 
 function stopBroadcasting() {
@@ -100,63 +114,14 @@ function stopBroadcasting() {
   }
 }
 
-// === Admin Panel Keyboard ===
-const adminKeyboard = {
-  reply_markup: {
-    inline_keyboard: [
-      [{ text: "🚀 Start", callback_data: "start_broadcast" }],
-      [{ text: "🛑 Stop", callback_data: "stop_broadcast" }],
-      [{ text: "📊 Status", callback_data: "status_broadcast" }],
-    ],
-  },
-};
-
-// === Admin Command ===
-bot.onText(/\/admin/, (msg) => {
-  if (msg.from.id !== ADMIN_ID) {
-    return bot.sendMessage(msg.chat.id, "🚫 Access Denied.");
-  }
-  bot.sendMessage(msg.chat.id, "🛠️ Admin Panel", adminKeyboard);
+// Listen for commands from the Telegram bot
+bot.onText(/\/start/, (msg) => {
+  bot.sendMessage(msg.chat.id, "Welcome to EarnBuzz Bot!");
 });
 
-// === Button Handlers ===
-bot.on("callback_query", (query) => {
-  const chatId = query.message.chat.id;
-  const userId = query.from.id;
-
-  if (userId !== ADMIN_ID) {
-    return bot.answerCallbackQuery(query.id, {
-      text: "🚫 You are not authorized.",
-    });
-  }
-
-  switch (query.data) {
-    case "start_broadcast":
-      startBroadcasting();
-      bot.editMessageText("✅ Broadcast started!", {
-        chat_id: chatId,
-        message_id: query.message.message_id,
-        reply_markup: adminKeyboard.reply_markup,
-      });
-      break;
-
-    case "stop_broadcast":
-      stopBroadcasting();
-      bot.editMessageText("🛑 Broadcast stopped.", {
-        chat_id: chatId,
-        message_id: query.message.message_id,
-        reply_markup: adminKeyboard.reply_markup,
-      });
-      break;
-
-    case "status_broadcast":
-      bot.answerCallbackQuery({
-        callback_query_id: query.id,
-        text: broadcasting
-          ? `📢 Broadcasting is ON\nMessages sent: ${messageCount}/500`
-          : "🔕 Broadcasting is OFF",
-        show_alert: true,
-      });
-      break;
-  }
+bot.onText(/\/stop/, (msg) => {
+  bot.sendMessage(msg.chat.id, "Bot operations stopped.");
 });
+
+// Start bot logic
+startBroadcasting();
