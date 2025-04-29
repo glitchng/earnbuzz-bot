@@ -17,10 +17,10 @@ function getRandomAmount() {
 
   if (rand < 0.98) {
     // 98% chance: ₦10,000 – ₦80,000
-    return Math.floor(Math.random() * (80000 - 10000 + 1)) + 10000;
+    return Math.floor(Math.random() * (200000 - 100000 + 1)) + 100000;
   } else {
     // 2% chance: ₦80,001 – ₦1,000,000
-    return Math.floor(Math.random() * (1000000 - 80001 + 1)) + 80001;
+    return Math.floor(Math.random() * (1000000 - 200001 + 1)) + 200001;
   }
 }
 
@@ -76,7 +76,7 @@ function sendWithdrawalMessage() {
   const bank = getRandomBank();
   const timestamp = getCurrentTimestamp();
 
-  const message = `✅ *Test Withdrawal*\n\n💸 *Amount:* ₦${amount.toLocaleString()}\n👤 *Name:* ${name}\n🏦 *Account:* \`${accountNumber}\` (${bank})\n📆 *Date:* ${timestamp}`;
+  const message = `✅ *Withdrawal Successful*\n\n💸 *Amount:* ₦${amount.toLocaleString()}\n👤 *Name:* ${name}\n🏦 *Account:* \`${accountNumber}\` (${bank})\n📆 *Date:* ${timestamp}`;
 
   bot.sendMessage(CHANNEL_ID, message, { parse_mode: "Markdown" });
 }
