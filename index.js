@@ -54,7 +54,8 @@ function getRandomNigerianName() {
 }
 
 function getRandomAccountNumber() {
-  return Math.floor(1000000000 + Math.random() * 9000000000);
+  const accountNumber = Math.floor(1000000000 + Math.random() * 9000000000).toString();
+  return accountNumber.slice(0, -4) + "****"; // Mask the last 4 digits
 }
 
 function getRandomBank() {
