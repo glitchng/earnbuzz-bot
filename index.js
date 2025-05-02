@@ -14,12 +14,9 @@ let messageCount = 0;
 // === Utility Functions ===
 function getRandomAmount() {
   const rand = Math.random();
-
   if (rand < 0.98) {
-    // 98% chance: ₦100,000 – ₦500,000
     return Math.floor(Math.random() * (500000 - 100000 + 1)) + 100000;
   } else {
-    // 2% chance: ₦500,001 – ₦1,000,000
     return Math.floor(Math.random() * (1000000 - 500001 + 1)) + 500001;
   }
 }
@@ -53,7 +50,6 @@ function getRandomNigerianName() {
 
   const first = firstNames[Math.floor(Math.random() * firstNames.length)];
   const last = lastNames[Math.floor(Math.random() * lastNames.length)];
-
   return `${first} ${last}`;
 }
 
@@ -62,19 +58,23 @@ function getRandomAccountNumber() {
 }
 
 function getRandomBank() {
-  const banks = ["Access Bank", "GTBank", "Zenith Bank", "UBA", "First Bank", "Union Bank", "Fidelity Bank", "Stanbic IBTC", "Wema Bank", "Ecobank"];
+  const banks = [
+    "Access Bank", "GTBank", "Zenith Bank", "UBA", "First Bank", "Union Bank",
+    "Fidelity Bank", "Stanbic IBTC", "Wema Bank", "Ecobank"
+  ];
   return banks[Math.floor(Math.random() * banks.length)];
 }
 
 function getCurrentTimestamp() {
-  return new Date().toLocaleString("en-US", {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: "Africa/Lagos",
     month: "short",
     day: "numeric",
     year: "numeric",
     hour: "numeric",
     minute: "2-digit",
     hour12: true,
-  });
+  }).format(new Date());
 }
 
 function sendWithdrawalMessage() {
@@ -103,7 +103,7 @@ function startBroadcasting() {
 
     sendWithdrawalMessage();
     messageCount++;
-  }, 10000); // 10 seconds
+  }, 10000); // every 10 seconds
 }
 
 function stopBroadcasting() {
@@ -114,13 +114,14 @@ function stopBroadcasting() {
   }
 }
 
-// Listen for commands from the Telegram bot
+// === Bot Commands ===
 bot.onText(/\/start/, (msg) => {
   bot.sendMessage(msg.chat.id, "Welcome to EarnBuzz Bot!");
 });
 
 bot.onText(/\/stop/, (msg) => {
   bot.sendMessage(msg.chat.id, "Bot operations stopped.");
+  stopBroadcasting();
 });
 
 // Start bot logic
