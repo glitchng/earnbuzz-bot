@@ -103,7 +103,7 @@ function startBroadcasting() {
 
     sendWithdrawalMessage();
     messageCount++;
-  }, 30000); // every 30 seconds = 2 messages per minute
+  }, 150000); // every 2.5 minutes = 2 messages in 5 minutes
 }
 
 function stopBroadcasting() {
