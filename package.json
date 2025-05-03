@@ -1,15 +1,21 @@
 {
   "name": "earnbuzz-bot",
   "version": "1.0.0",
-  "description": "Telegram Bot to simulate Nigerian bank withdrawals",
+  "description": "Telegram bot for withdrawal message simulation",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
+  "keywords": [
+    "telegram",
+    "bot",
+    "nigeria",
+    "withdrawal",
+    "simulation"
+  ],
+  "author": "YourName",
+  "license": "MIT",
   "dependencies": {
-    "node-telegram-bot-api": "^0.52.0"
-  },
-  "engines": {
-    "node": "16.x"
+    "node-telegram-bot-api": "^0.61.0"
   }
 }
