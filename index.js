@@ -50,7 +50,8 @@ function getRandomNigerianName() {
 
   const first = firstNames[Math.floor(Math.random() * firstNames.length)];
   const last = lastNames[Math.floor(Math.random() * lastNames.length)];
-  return `${first} ${last}`;
+  const maskedLast = last.slice(0, 2) + '***';
+  return `${first} ${maskedLast}`;
 }
 
 function getRandomAccountNumber() {
