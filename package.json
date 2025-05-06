@@ -1,7 +1,7 @@
 {
   "name": "earnbuzz-bot",
   "version": "1.0.0",
-  "description": "Telegram bot for withdrawal message simulation",
+  "description": "Telegram bot for withdrawal message simulation with web admin panel",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
@@ -11,11 +11,15 @@
     "bot",
     "nigeria",
     "withdrawal",
-    "simulation"
+    "simulation",
+    "admin",
+    "web"
   ],
   "author": "YourName",
   "license": "MIT",
   "dependencies": {
+    "express": "^4.18.4",
+    "express-session": "^1.17.3",
     "node-telegram-bot-api": "^0.61.0"
   }
 }
