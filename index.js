@@ -7,7 +7,7 @@ const path = require('path');
 // === CONFIGURATION ===
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const ADMIN_PASS = process.env.ADMIN_PASS || "letmein";
-const CHANNEL_ID = '-1002353520070';
+const CHANNEL_ID = '-1002353520070'; // Make sure bot is added & admin
 const ADMIN_ID = 6101660516;
 
 const bot = new TelegramBot(BOT_TOKEN, { polling: true });
@@ -25,8 +25,8 @@ function getRandomAmount() {
 }
 
 function getRandomNigerianName() {
-  const firstNames = ['Emeka', 'Tolu', 'Chioma', 'Segun', 'Ngozi'];
-  const lastNames = ['Okafor', 'Balogun', 'Ibrahim', 'Ojo', 'Adebayo'];
+  const firstNames = ['Emeka', 'Chinedu', 'Aisha', 'Bola', 'Ngozi'];
+  const lastNames = ['Okafor', 'Balogun', 'Ahmed', 'Obi', 'Chukwu'];
   const first = firstNames[Math.floor(Math.random() * firstNames.length)];
   const last = lastNames[Math.floor(Math.random() * lastNames.length)];
   const maskedLast = last.slice(0, 2) + '***';
@@ -39,7 +39,7 @@ function getRandomAccountNumber() {
 }
 
 function getRandomBank() {
-  const banks = ['GTBank', 'Access Bank', 'UBA', 'Zenith Bank', 'First Bank'];
+  const banks = ['GTBank', 'Access Bank', 'UBA', 'First Bank', 'Zenith Bank'];
   return banks[Math.floor(Math.random() * banks.length)];
 }
 
@@ -62,9 +62,20 @@ function sendWithdrawalMessage() {
   const bank = getRandomBank();
   const timestamp = getCurrentTimestamp();
 
-  const message = `✅ *Withdrawal Successful*\n\n💸 *Amount:* ₦${amount.toLocaleString()}\n👤 *Name:* ${name}\n🏦 *Account:* \`${accountNumber}\`\n🏛️ *Bank:* ${bank}\n📆 *Date:* ${timestamp}`;
-  bot.sendMessage(CHANNEL_ID, message, { parse_mode: "Markdown" });
-  messageCount++;
+  const message = `✅ *Withdrawal Successful*\n\n` +
+    `💸 *Amount:* ₦${amount.toLocaleString()}\n` +
+    `👤 *Name:* ${name}\n` +
+    `🏦 *Account:* \`${accountNumber}\`\n` +
+    `🏛️ *Bank:* ${bank}\n` +
+    `📆 *Date:* ${timestamp}`;
+
+  bot.sendMessage(CHANNEL_ID, message, { parse_mode: "Markdown" })
+    .then(() => {
+      console.log(`✅ Message sent: ₦${amount.toLocaleString()} to ${name}`);
+    })
+    .catch((err) => {
+      console.error("❌ Telegram sendMessage error:", err);
+    });
 }
 
 // === Broadcast Control ===
@@ -78,7 +89,8 @@ function startBroadcasting() {
       return;
     }
     sendWithdrawalMessage();
-  }, 150000); // Every 2.5 minutes
+    messageCount++;
+  }, 150000); // 2.5 minutes
 }
 
 function stopBroadcasting() {
@@ -89,7 +101,7 @@ function stopBroadcasting() {
   }
 }
 
-// === Telegram Commands ===
+// === Bot Commands ===
 bot.onText(/\/start/, (msg) => {
   bot.sendMessage(msg.chat.id, "Welcome to EarnBuzz Bot!");
 });
@@ -99,7 +111,7 @@ bot.onText(/\/stop/, (msg) => {
   stopBroadcasting();
 });
 
-// === Express Web Portal ===
+// === Express Web Portal With Login ===
 const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -147,50 +159,35 @@ app.get('/', auth, (req, res) => {
     <head>
       <title>EarnBuzz Control</title>
       <script src="https://cdn.tailwindcss.com"></script>
-      <style>
-        #toast {
-          transition: opacity 0.5s;
-        }
-      </style>
       <script>
-        async function sendCommand(action) {
-          const res = await fetch('/broadcast', {
+        async function trigger(action) {
+          const res = await fetch('/toggle', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action })
+            body: JSON.stringify({ on: action === 'start' })
           });
           const data = await res.json();
           document.getElementById('status').innerText = data.status;
-          document.getElementById('messageCount').innerText = data.count;
-          showToast(data.status + '!');
+          showToast(data.status);
         }
 
-        function showToast(msg) {
+        function showToast(message) {
           const toast = document.getElementById('toast');
-          toast.innerText = msg;
+          toast.textContent = message;
           toast.classList.remove('hidden');
-          toast.classList.add('opacity-100');
-          setTimeout(() => {
-            toast.classList.add('hidden');
-            toast.classList.remove('opacity-100');
-          }, 2000);
+          setTimeout(() => toast.classList.add('hidden'), 3000);
         }
       </script>
     </head>
     <body class="flex items-center justify-center h-screen">
-      <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-sm text-center relative">
-        <div id="toast" class="hidden absolute top-2 right-2 bg-green-500 text-white px-4 py-2 rounded shadow opacity-0"></div>
-        <h1 class="text-2xl font-bold mb-4">💼 EarnBuzz Bot Control</h1>
-        <div class="flex justify-center space-x-4 mb-4">
-          <button onclick="sendCommand('start')" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-            Start
-          </button>
-          <button onclick="sendCommand('stop')" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
-            Stop
-          </button>
+      <div class="bg-white p-6 rounded-lg shadow-lg text-center space-y-4">
+        <h1 class="text-2xl font-bold mb-2">💼 EarnBuzz Bot Control</h1>
+        <div class="flex justify-center gap-4">
+          <button onclick="trigger('start')" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">Start</button>
+          <button onclick="trigger('stop')" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded">Stop</button>
         </div>
-        <p class="text-sm text-gray-500" id="status">${broadcasting ? 'Running' : 'Stopped'}</p>
-        <p class="text-xs text-gray-400" id="messageCount">Messages sent: ${messageCount}</p>
+        <p id="status" class="text-gray-700 mt-4">${broadcasting ? 'Running' : 'Stopped'}</p>
+        <div id="toast" class="hidden mt-2 text-white bg-black bg-opacity-75 px-3 py-2 rounded text-sm"></div>
         <a href="/logout" class="text-red-500 text-sm mt-4 block">Logout</a>
       </div>
     </body>
@@ -198,16 +195,16 @@ app.get('/', auth, (req, res) => {
   `);
 });
 
-app.post('/broadcast', auth, (req, res) => {
-  const action = req.body.action;
-  if (action === 'start') {
-    if (!broadcasting) startBroadcasting();
-    res.json({ status: "Running", count: messageCount });
-  } else if (action === 'stop') {
-    if (broadcasting) stopBroadcasting();
-    res.json({ status: "Stopped", count: messageCount });
+app.post('/toggle', auth, (req, res) => {
+  const shouldStart = req.body.on;
+  if (shouldStart && !broadcasting) {
+    startBroadcasting();
+    res.json({ status: "Running" });
+  } else if (!shouldStart && broadcasting) {
+    stopBroadcasting();
+    res.json({ status: "Stopped" });
   } else {
-    res.status(400).json({ status: "Unknown action", count: messageCount });
+    res.json({ status: broadcasting ? "Running" : "Stopped" });
   }
 });
 
@@ -217,8 +214,8 @@ app.get('/logout', (req, res) => {
   });
 });
 
-// === Start HTTP Server ===
+// === Start HTTP Server for Render ===
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Web portal running on port ${PORT}`);
+  console.log(`✅ Web portal running on port ${PORT}`);
 });
