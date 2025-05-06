@@ -2,21 +2,31 @@ const http = require('http');
 const express = require('express');
 const session = require('express-session');
 const TelegramBot = require('node-telegram-bot-api');
-const path = require('path');
 
 // === CONFIGURATION ===
 const BOT_TOKEN = process.env.BOT_TOKEN;
-const ADMIN_PASS = process.env.ADMIN_PASS || "letmein";
-const CHANNEL_ID = '-1002353520070'; // Make sure bot is added & admin
-const ADMIN_ID = 6101660516;
+const CHANNEL_ID = '-1002353520070'; // Replace with your channel ID
+const ADMIN_ID = 6101660516; // Replace with your Telegram ID
 
+const USERNAME = 'admin';
+const PASSWORD = 'admin';
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+app.use(express.urlencoded({ extended: true }));
+app.use(session({
+  secret: 'supersecretkey',
+  resave: false,
+  saveUninitialized: true
+}));
+
+// === BOT LOGIC ===
 const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 
 let broadcasting = false;
 let broadcastInterval = null;
 let messageCount = 0;
 
-// === Utility Functions ===
 function getRandomAmount() {
   const rand = Math.random();
   return rand < 0.98
@@ -25,8 +35,8 @@ function getRandomAmount() {
 }
 
 function getRandomNigerianName() {
-  const firstNames = ['Emeka', 'Chinedu', 'Aisha', 'Bola', 'Ngozi'];
-  const lastNames = ['Okafor', 'Balogun', 'Ahmed', 'Obi', 'Chukwu'];
+  const firstNames = ["Chinedu", "Aisha", "Tunde", "Ngozi", "Emeka", "Fatima", "Ibrahim", "Kelechi", "Seyi"];
+  const lastNames = ["Okoro", "Bello", "Oladipo", "Nwankwo", "Eze", "Musa", "Lawal", "Umeh", "Bakare"];
   const first = firstNames[Math.floor(Math.random() * firstNames.length)];
   const last = lastNames[Math.floor(Math.random() * lastNames.length)];
   const maskedLast = last.slice(0, 2) + '***';
@@ -34,12 +44,12 @@ function getRandomNigerianName() {
 }
 
 function getRandomAccountNumber() {
-  const accountNumber = Math.floor(1000000000 + Math.random() * 9000000000).toString();
-  return accountNumber.slice(0, -4) + "****";
+  const acc = Math.floor(1000000000 + Math.random() * 9000000000).toString();
+  return acc.slice(0, -4) + '****';
 }
 
 function getRandomBank() {
-  const banks = ['GTBank', 'Access Bank', 'UBA', 'First Bank', 'Zenith Bank'];
+  const banks = ["Access Bank", "GTBank", "Zenith Bank", "UBA", "First Bank"];
   return banks[Math.floor(Math.random() * banks.length)];
 }
 
@@ -58,31 +68,19 @@ function getCurrentTimestamp() {
 function sendWithdrawalMessage() {
   const amount = getRandomAmount();
   const name = getRandomNigerianName();
-  const accountNumber = getRandomAccountNumber();
+  const account = getRandomAccountNumber();
   const bank = getRandomBank();
-  const timestamp = getCurrentTimestamp();
+  const date = getCurrentTimestamp();
 
-  const message = `✅ *Withdrawal Successful*\n\n` +
-    `💸 *Amount:* ₦${amount.toLocaleString()}\n` +
-    `👤 *Name:* ${name}\n` +
-    `🏦 *Account:* \`${accountNumber}\`\n` +
-    `🏛️ *Bank:* ${bank}\n` +
-    `📆 *Date:* ${timestamp}`;
-
-  bot.sendMessage(CHANNEL_ID, message, { parse_mode: "Markdown" })
-    .then(() => {
-      console.log(`✅ Message sent: ₦${amount.toLocaleString()} to ${name}`);
-    })
-    .catch((err) => {
-      console.error("❌ Telegram sendMessage error:", err);
-    });
+  const msg = `✅ *Withdrawal Successful*\n\n💸 *Amount:* ₦${amount.toLocaleString()}\n👤 *Name:* ${name}\n🏦 *Account:* \`${account}\`\n🏛️ *Bank:* ${bank}\n📆 *Date:* ${date}`;
+  bot.sendMessage(CHANNEL_ID, msg, { parse_mode: "Markdown" });
 }
 
-// === Broadcast Control ===
 function startBroadcasting() {
   if (broadcasting) return;
   broadcasting = true;
   messageCount = 0;
+
   broadcastInterval = setInterval(() => {
     if (!broadcasting || messageCount >= 500) {
       stopBroadcasting();
@@ -90,7 +88,7 @@ function startBroadcasting() {
     }
     sendWithdrawalMessage();
     messageCount++;
-  }, 150000); // 2.5 minutes
+  }, 150000); // Every 2.5 mins
 }
 
 function stopBroadcasting() {
@@ -101,7 +99,7 @@ function stopBroadcasting() {
   }
 }
 
-// === Bot Commands ===
+// === BOT COMMANDS ===
 bot.onText(/\/start/, (msg) => {
   bot.sendMessage(msg.chat.id, "Welcome to EarnBuzz Bot!");
 });
@@ -111,111 +109,53 @@ bot.onText(/\/stop/, (msg) => {
   stopBroadcasting();
 });
 
-// === Express Web Portal With Login ===
-const app = express();
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-app.use(session({
-  secret: 'super_secret_key',
-  resave: false,
-  saveUninitialized: false
-}));
-
-function auth(req, res, next) {
-  if (req.session.loggedIn) next();
-  else res.redirect('/login');
+// === WEB PORTAL ===
+function requireLogin(req, res, next) {
+  if (req.session.loggedIn) return next();
+  res.redirect('/login');
 }
 
 app.get('/login', (req, res) => {
   res.send(`
-    <html><head><title>Login</title><script src="https://cdn.tailwindcss.com"></script></head>
-    <body class="bg-gray-100 flex justify-center items-center h-screen">
-      <form method="POST" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-        <h2 class="text-2xl font-bold mb-4 text-center">🔐 Admin Login</h2>
-        <input type="password" name="password" placeholder="Password"
-          class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3" />
-        <button type="submit"
-          class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full">
-          Login
-        </button>
-      </form>
-    </body>
-    </html>
+    <h2>Admin Login</h2>
+    <form method="post" action="/login">
+      <input name="username" placeholder="Username" /><br/>
+      <input type="password" name="password" placeholder="Password" /><br/>
+      <button type="submit">Login</button>
+    </form>
   `);
 });
 
 app.post('/login', (req, res) => {
-  if (req.body.password === ADMIN_PASS) {
+  const { username, password } = req.body;
+  if (username === USERNAME && password === PASSWORD) {
     req.session.loggedIn = true;
     res.redirect('/');
   } else {
-    res.send('<p>Wrong password. <a href="/login">Try again</a></p>');
+    res.send('Login failed. <a href="/login">Try again</a>');
   }
 });
 
-app.get('/', auth, (req, res) => {
+app.get('/', requireLogin, (req, res) => {
   res.send(`
-    <html class="bg-gray-100">
-    <head>
-      <title>EarnBuzz Control</title>
-      <script src="https://cdn.tailwindcss.com"></script>
-      <script>
-        async function trigger(action) {
-          const res = await fetch('/toggle', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ on: action === 'start' })
-          });
-          const data = await res.json();
-          document.getElementById('status').innerText = data.status;
-          showToast(data.status);
-        }
-
-        function showToast(message) {
-          const toast = document.getElementById('toast');
-          toast.textContent = message;
-          toast.classList.remove('hidden');
-          setTimeout(() => toast.classList.add('hidden'), 3000);
-        }
-      </script>
-    </head>
-    <body class="flex items-center justify-center h-screen">
-      <div class="bg-white p-6 rounded-lg shadow-lg text-center space-y-4">
-        <h1 class="text-2xl font-bold mb-2">💼 EarnBuzz Bot Control</h1>
-        <div class="flex justify-center gap-4">
-          <button onclick="trigger('start')" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">Start</button>
-          <button onclick="trigger('stop')" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded">Stop</button>
-        </div>
-        <p id="status" class="text-gray-700 mt-4">${broadcasting ? 'Running' : 'Stopped'}</p>
-        <div id="toast" class="hidden mt-2 text-white bg-black bg-opacity-75 px-3 py-2 rounded text-sm"></div>
-        <a href="/logout" class="text-red-500 text-sm mt-4 block">Logout</a>
-      </div>
-    </body>
-    </html>
+    <h2>Welcome, Admin</h2>
+    <p>Status: <strong>${broadcasting ? 'Broadcasting ✅' : 'Stopped ❌'}</strong></p>
+    <form method="post" action="/toggle">
+      <button>${broadcasting ? 'Stop' : 'Start'} Bot</button>
+    </form>
   `);
 });
 
-app.post('/toggle', auth, (req, res) => {
-  const shouldStart = req.body.on;
-  if (shouldStart && !broadcasting) {
-    startBroadcasting();
-    res.json({ status: "Running" });
-  } else if (!shouldStart && broadcasting) {
+app.post('/toggle', requireLogin, (req, res) => {
+  if (broadcasting) {
     stopBroadcasting();
-    res.json({ status: "Stopped" });
   } else {
-    res.json({ status: broadcasting ? "Running" : "Stopped" });
+    startBroadcasting();
   }
+  res.redirect('/');
 });
 
-app.get('/logout', (req, res) => {
-  req.session.destroy(() => {
-    res.redirect('/login');
-  });
-});
-
-// === Start HTTP Server for Render ===
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`✅ Web portal running on port ${PORT}`);
+// === COMBINED HTTP SERVER (for Render) ===
+http.createServer(app).listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
