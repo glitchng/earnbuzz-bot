@@ -15,7 +15,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 app.use(express.urlencoded({ extended: true }));
 app.use(session({
-  secret: 'supersecretkey',
+  secret: process.env.SESSION_SECRET || 'supersecretkey', // Change to a stronger secret key in production
   resave: false,
   saveUninitialized: true
 }));
@@ -26,6 +26,7 @@ const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 let broadcasting = false;
 let broadcastInterval = null;
 let messageCount = 0;
+const messageLog = []; // Store messages for the log
 
 function getRandomAmount() {
   const rand = Math.random();
@@ -73,7 +74,14 @@ function sendWithdrawalMessage() {
   const date = getCurrentTimestamp();
 
   const msg = `✅ *Withdrawal Successful*\n\n💸 *Amount:* ₦${amount.toLocaleString()}\n👤 *Name:* ${name}\n🏦 *Account:* \`${account}\`\n🏛️ *Bank:* ${bank}\n📆 *Date:* ${date}`;
-  bot.sendMessage(CHANNEL_ID, msg, { parse_mode: "Markdown" });
+  
+  // Log the message
+  messageLog.unshift(msg);
+  if (messageLog.length > 20) messageLog.pop(); // Keep only the latest 20 messages
+
+  // Send message to Telegram channel
+  bot.sendMessage(CHANNEL_ID, msg, { parse_mode: "Markdown" })
+    .catch(err => console.error("Error sending message: ", err)); // Log any errors
 }
 
 function startBroadcasting() {
@@ -143,6 +151,8 @@ app.get('/', requireLogin, (req, res) => {
     <form method="post" action="/toggle">
       <button>${broadcasting ? 'Stop' : 'Start'} Bot</button>
     </form>
+    <h3>Recent Broadcasts</h3>
+    <pre>${messageLog.join('\n\n')}</pre>
   `);
 });
 
