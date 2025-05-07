@@ -1,10 +1,9 @@
 const http = require('http');
 const TelegramBot = require('node-telegram-bot-api');
 
-// === CONFIGURATION ===
-const BOT_TOKEN = process.env.BOT_TOKEN;  // Set in Render environment variables
-const CHANNEL_ID = '-1002353520070';     // Replace with your channel ID
-const ADMIN_ID = 6101660516;             // Replace with your Telegram ID
+const BOT_TOKEN = process.env.BOT_TOKEN;
+const CHANNEL_ID = '-1002353520070';
+const ADMIN_ID = 6101660516;
 
 const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 
@@ -15,55 +14,27 @@ let messageCount = 0;
 // === Utility Functions ===
 function getRandomAmount() {
   const rand = Math.random();
-  if (rand < 0.98) {
-    return Math.floor(Math.random() * (500000 - 100000 + 1)) + 100000;
-  } else {
-    return Math.floor(Math.random() * (1000000 - 500001 + 1)) + 500001;
-  }
+  return rand < 0.98
+    ? Math.floor(Math.random() * (500000 - 100000 + 1)) + 100000
+    : Math.floor(Math.random() * (1000000 - 500001 + 1)) + 500001;
 }
 
 function getRandomNigerianName() {
-  const firstNames = [
-    "Chinedu", "Aisha", "Tunde", "Ngozi", "Emeka", "Fatima", "Ibrahim", "Kelechi",
-    "Seyi", "Adaobi", "Bola", "Obinna", "Zainab", "Yusuf", "Amaka", "David", "Grace",
-    "Uche", "Tope", "Nneka", "Samuel", "Maryam", "Gbenga", "Rashida", "Kingsley", "Temitope",
-    "Hadiza", "John", "Blessing", "Peter", "Linda", "Ahmed", "Funmi", "Rita", "Abdul",
-    "Chika", "Paul", "Victoria", "Halima", "Ifeanyi", "Sarah", "Joseph", "Joy", "Musa",
-    "Bukky", "Stephen", "Aminat", "Henry", "Femi", "Micheal", "Modupe", "Yemisi", "Titi",
-    "Chijioke", "Oluwaseun", "Durojaiye", "Fatimah", "Ademola", "Ifeoluwa", "Hassan", "Aderemi",
-    "Idris", "Ekong", "Ivy", "Uko", "Eyo", "Abasiama", "Mfon", "Mbakara", "Nkechi",
-    "Idorenyin", "Martha", "Ita", "Akpan", "Essien", "Obong", "Ikot", "Inyang", "Ntia",
-    "Akpabio", "Etim", "Inyene", "Ndiana", "Udoh", "Akanimoh", "Udo", "Ukpong"
-  ];
-
-  const lastNames = [
-    "Okoro", "Bello", "Oladipo", "Nwankwo", "Eze", "Musa", "Lawal", "Umeh", "Bakare",
-    "Okafor", "Adeyemi", "Mohammed", "Onyeka", "Ibrahim", "Ogunleye", "Balogun",
-    "Chukwu", "Usman", "Abiola", "Okonkwo", "Aliyu", "Ogundele", "Danladi", "Ogbonna",
-    "Salami", "Olumide", "Obi", "Akinwale", "Suleiman", "Ekwueme", "Ayodele", "Garba",
-    "Nwachukwu", "Anyanwu", "Yahaya", "Idowu", "Ezra", "Mustapha", "Iroko", "Ajayi",
-    "Adebayo", "Ogundipe", "Nuhu", "Bamgbose", "Ikenna", "Osagie", "Akinyemi", "Chisom",
-    "Oladele", "Adeleke", "Fashola", "Taiwo", "Tiwatope", "Onyebuchi", "Ikechukwu",
-    "Nnaji", "Ogunbiyi", "Sule", "Muhammad", "Alabi", "Oloyede", "Etim", "Bassey",
-    "Otu", "Akpabio", "Ubong"
-  ];
-
+  const firstNames = ["Chinedu", "Aisha", "Tunde", "Ngozi", "Fatima"];
+  const lastNames = ["Okoro", "Bello", "Eze", "Oladipo"];
   const first = firstNames[Math.floor(Math.random() * firstNames.length)];
   const last = lastNames[Math.floor(Math.random() * lastNames.length)];
-  const maskedLast = last.slice(0, 2) + '***';
-  return `${first} ${maskedLast}`;
+  return `${first} ${last.slice(0, 2)}***`;
 }
 
 function getRandomAccountNumber() {
-  const accountNumber = Math.floor(1000000000 + Math.random() * 9000000000).toString();
-  return accountNumber.slice(0, -4) + "****"; // Mask last 4 digits
+  return Math.floor(1000000000 + Math.random() * 9000000000)
+    .toString()
+    .slice(0, -4) + "****";
 }
 
 function getRandomBank() {
-  const banks = [
-    "Access Bank", "GTBank", "Zenith Bank", "UBA", "First Bank", "Union Bank",
-    "Fidelity Bank", "Stanbic IBTC", "Wema Bank", "Ecobank"
-  ];
+  const banks = ["Access Bank", "GTBank", "Zenith Bank", "UBA", "First Bank"];
   return banks[Math.floor(Math.random() * banks.length)];
 }
 
@@ -79,7 +50,8 @@ function getCurrentTimestamp() {
   }).format(new Date());
 }
 
-function sendWithdrawalMessage() {
+// === Broadcast Message Function ===
+async function sendWithdrawalMessage() {
   const amount = getRandomAmount();
   const name = getRandomNigerianName();
   const accountNumber = getRandomAccountNumber();
@@ -88,24 +60,29 @@ function sendWithdrawalMessage() {
 
   const message = `✅ *Withdrawal Successful*\n\n💸 *Amount:* ₦${amount.toLocaleString()}\n👤 *Name:* ${name}\n🏦 *Account:* \`${accountNumber}\`\n🏛️ *Bank:* ${bank}\n📆 *Date:* ${timestamp}`;
 
-  bot.sendMessage(CHANNEL_ID, message, { parse_mode: "Markdown" });
+  try {
+    await bot.sendMessage(CHANNEL_ID, message, { parse_mode: "Markdown" });
+    messageCount++;  // Increment the message counter
+  } catch (err) {
+    const errorNote = `⚠️ *Broadcast Failed!*\n\nReason: \`${err.message}\``;
+    await bot.sendMessage(ADMIN_ID, errorNote, { parse_mode: "Markdown" });
+    stopBroadcasting();
+  }
 }
 
 // === Broadcast Control ===
 function startBroadcasting() {
   if (broadcasting) return;
   broadcasting = true;
-  messageCount = 0;
+  messageCount = 0;  // Reset message count on restart
 
   broadcastInterval = setInterval(() => {
     if (!broadcasting || messageCount >= 500) {
       stopBroadcasting();
       return;
     }
-
     sendWithdrawalMessage();
-    messageCount++;
-  }, 150000); // 150000 ms = 2.5 minutes → 2 messages every 5 mins
+  }, 150000); // Every 2.5 minutes
 }
 
 function stopBroadcasting() {
@@ -116,18 +93,79 @@ function stopBroadcasting() {
   }
 }
 
-// === Bot Commands ===
-bot.onText(/\/start/, (msg) => {
-  bot.sendMessage(msg.chat.id, "Welcome to EarnBuzz Bot!");
+// === Admin Panel Keyboard ===
+function getAdminPanelKeyboard() {
+  return {
+    reply_markup: {
+      inline_keyboard: [
+        [
+          {
+            text: broadcasting ? "✅ Running" : "▶️ Start Broadcast",
+            callback_data: broadcasting ? "already_running" : "start_broadcast"
+          },
+          {
+            text: "⛔ Stop Broadcast",
+            callback_data: "stop_broadcast"
+          }
+        ],
+        [
+          {
+            text: `📊 Stats: ${messageCount} Messages Sent`,
+            callback_data: "show_stats"
+          }
+        ]
+      ]
+    }
+  };
+}
+
+// === /panel Command ===
+bot.onText(/\/panel/, (msg) => {
+  if (msg.from.id !== ADMIN_ID) return;
+  bot.sendMessage(msg.chat.id, "🎛️ *Control Panel*", {
+    parse_mode: "Markdown",
+    ...getAdminPanelKeyboard()
+  });
 });
 
-bot.onText(/\/stop/, (msg) => {
-  bot.sendMessage(msg.chat.id, "Bot operations stopped.");
-  stopBroadcasting();
-});
+// === Inline Keyboard Callback Handling ===
+bot.on("callback_query", async (query) => {
+  const userId = query.from.id;
+  const messageId = query.message.message_id;
+  const chatId = query.message.chat.id;
 
-// Start broadcasting immediately
-startBroadcasting();
+  if (userId !== ADMIN_ID) {
+    bot.answerCallbackQuery(query.id, { text: "Unauthorized", show_alert: true });
+    return;
+  }
+
+  if (query.data === "start_broadcast" && !broadcasting) {
+    startBroadcasting();
+    await bot.answerCallbackQuery({ callback_query_id: query.id, text: "📡 Broadcasting started" });
+    await bot.editMessageReplyMarkup(getAdminPanelKeyboard().reply_markup, {
+      chat_id: chatId,
+      message_id: messageId
+    });
+  }
+
+  if (query.data === "stop_broadcast" && broadcasting) {
+    stopBroadcasting();
+    await bot.answerCallbackQuery({ callback_query_id: query.id, text: "🛑 Broadcasting stopped" });
+    await bot.editMessageReplyMarkup(getAdminPanelKeyboard().reply_markup, {
+      chat_id: chatId,
+      message_id: messageId
+    });
+  }
+
+  if (query.data === "already_running") {
+    await bot.answerCallbackQuery({ callback_query_id: query.id, text: "🔄 Already running" });
+  }
+
+  if (query.data === "show_stats") {
+    const statsMessage = `📊 *Live Stats*\n\nMessages Sent: ${messageCount}\nBroadcasting: ${broadcasting ? "Yes" : "No"}`;
+    await bot.answerCallbackQuery({ callback_query_id: query.id, text: statsMessage });
+  }
+});
 
 // === Dummy HTTP Server for Render ===
 const PORT = process.env.PORT || 3000;
