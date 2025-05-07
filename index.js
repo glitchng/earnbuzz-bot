@@ -2,7 +2,7 @@ const http = require('http');
 const TelegramBot = require('node-telegram-bot-api');
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
-const CHANNEL_ID = '-1002353520070';
+const CHANNEL_ID = '-1002538237091';
 const ADMIN_ID = 6101660516;
 
 const bot = new TelegramBot(BOT_TOKEN, { polling: true });
